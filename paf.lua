@@ -58,9 +58,17 @@ local function chope(regle, tache)
 	-- Analyse.
 
 	if contenus then
-		for _, contenu in ipairs(contenus) do
-			if regle.e:match(contenu) then
-				return true
+		if regle.fois then
+			local fois = 0
+			for _, contenu in ipairs(contenus) do
+				fois = fois + regle.e:matchn(contenu, -1)
+			end
+			return fois
+		else
+			for _, contenu in ipairs(contenus) do
+				if regle.e:match(contenu) then
+					return 1
+				end
 			end
 		end
 	end
@@ -80,16 +88,22 @@ function PafEnsemble.paf(this, tache)
 	end
 
 	local points = 0.0
-	local touche = false
+	local touchees = {}
 	local colis = { t = tache }
 	for _, regle in ipairs(this.regles) do
-		if chope(regle, colis) then
-			points = points + regle.points
-			touche = true
+		local nfois = chope(regle, colis)
+		if nfois and nfois ~= 0.0 then
+			points = points + nfois * regle.points
+			local exp = regle.e:get_pattern()
+			if exp:len() > 24 then
+				exp = exp:sub(1, 23)..'…'
+			end
+			local chainenfois = nfois ~= 1 and nfois..'*' or ''
+			table.insert(touchees, chainenfois..'['..regle.ligne..'] '..exp)
 		end
 	end
-	if touche then
-		tache:insert_result(this.nom, points)
+	if #touchees > 0 then
+		tache:insert_result(this.nom, points, table.concat(touchees, ', '))
 	end
 end
 
@@ -109,16 +123,19 @@ function PafEnsemble.charger(this)
 		rspamd_logger.errx(rspamd_config, 'Unable to read paf rules file '%s': %s', this.chemin, err)
 		return
 	end
+	local num = 0
 	for l in f:lines() do
+		num = num + 1
 		l = l:gsub('^#.*', ''):gsub('[ \t]*[ \t]# .*', ''):gsub('^%s+', ''):gsub('%s+$', '')
 		if l:len() then
-			local marqueurs, points, exp = l:match('^([a-z]+)[ \t]+(%d+)[ \t]+(.*)$')
+			local marqueurs, mfois, points, exp = l:match('^([a-zA-Z]+)([*]?)[ \t]+([-]?%d+)[ \t]+(.*)$')
 			if marqueurs ~= nil and points ~= nil and exp ~= nil then
 				local e = regexp.create(exp)
 				if not e then
 					rspamd_logger.errx(rspamd_config, 'Expression is not a regex: %s', exp)
 				else
-					local r = { type = marqueurs, points = points, e = e }
+					local fois = mfois == '*'
+					local r = { ligne = num, type = marqueurs, fois = fois, points = points, e = e }
 					table.insert(regles, r)
 				end
 			end
