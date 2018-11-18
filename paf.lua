@@ -114,6 +114,39 @@ local function textesPurges(colis)
 	return colis.texte
 end
 
+local function affDiag(fichier, libelle, contenu)
+	local i, bloc, prefixe
+	prefixe = ''
+	if libelle then
+		prefixe = libelle..'.'
+	end
+	if type(contenu) == 'string' then
+		fichier:write("\n=== "..libelle.." ===\n\n")
+		fichier:write(contenu)
+		fichier:write("\n")
+	elseif type(contenu.get_content) == 'function' then
+		affDiag(fichier, prefixe..'getContent()', contenu:get_content())
+	elseif type(contenu.str) == 'function' then
+		affDiag(fichier, prefixe..'str()', contenu:str())
+	elseif type(contenu) == 'table' then
+		for i,bloc in pairs(contenu) do
+			affDiag(fichier, prefixe..i, bloc)
+		end
+	end
+end
+
+local function diag(colis)
+	-- Idéalement il faudrait que l'on puisse détecter le niveau de trace pour décider si on affiche ou non.
+	local err, infos = util.stat('/tmp/zebu')
+	if err then
+		return
+	end
+	local fichier = io.open("/tmp/zebu", "a")
+	fichier:write("================================\n")
+	affDiag(fichier, nil, colis)
+	fichier:close()
+end
+
 local function chope(regle, tache)
 	local contenus
 
@@ -179,6 +212,7 @@ function PafEnsemble.paf(this, tache)
 			table.insert(touchees, chainenfois..'['..regle.ligne..'] '..exp)
 		end
 	end
+	diag(colis)
 	if #touchees > 0 then
 		tache:insert_result(this.nom, points, table.concat(touchees, ', '))
 	end
