@@ -41,6 +41,79 @@ local function calculerEnTetes(tache)
 	return tache.enTetes
 end
 
+local purgesHtml =
+{
+	{ '[\r\n\002\003\011]', ' ' },
+	{ '<(/*)[dD][iI][vV]>', '\002%1div\003' },
+	{ '<(/*)[dD][iI][vV] [^>]*>', '\002%1div\003' },
+	{ '<[bB][rR]/*>', '\002br/\003' },
+	{ '<(/*)[aA]>', '\002%1a\003' },
+	{ '<[aA] [^>]*[hH][rR][eE][fF]="*([^ "]*)"*[^>]*>', '\002a href="%1"\003' },
+	-- Les img, aussi, sans doute?
+	{ '<[^>]*>', '' },
+	{ '\002', '<' },
+	{ '\003', '>' },
+	{ '<br/>', '\n' },
+	{ '<div>', '\n' },
+	{ '</div>', '' },
+	{ '&nbsp;', ' ' }, -- Espace insécable. Le transformer en espace pour simplifier l'analyse?
+}
+local function purgeHtml(c)
+	-- À FAIRE: toutes les entités &…;
+	for _,purge in ipairs(purgesHtml) do
+		c = c:gsub(purge[1], purge[2])
+	end
+	return c
+end
+
+local function boutsTexte(colis)
+	local contenus = {}
+	local trouve = false
+	local bouts = colis.t:get_text_parts()
+	if bouts then
+		for _,bout in ipairs(bouts) do
+			table.insert(contenus, bout)
+			trouve = true
+		end
+	end
+	if not trouve then
+		-- Des gugusses qui envoient du spam non-MIME, avec des Content-Type: text/plain; (point-virgule sans rien derrière) pour outrepasser le filtrage.
+		bouts = colis.t:get_parts()
+		for _,bout in ipairs(bouts) do
+			local type = bout:get_header('Content-Type')
+			if not type or type:sub(1, 4) == 'text' then
+				table.insert(contenus, bout)
+			end
+		end
+	end
+	return contenus
+end
+
+local function textesBruts(colis)
+	local textesBruts = {}
+	for _,bout in ipairs(boutsTexte(colis)) do
+		table.insert(textesBruts, bout:get_content())
+	end
+	return textesBruts
+end
+
+local function textesPurges(colis)
+	if not colis.texte then
+		colis.texte = {}
+		local contenu
+		for _,bout in ipairs(boutsTexte(colis)) do
+			if type(bout.is_html) == 'function' and bout:is_html() then
+				-- À FAIRE: vérifier que la mise-en-page des retours à la ligne est préservée (en HTML: <br/> donne un retour à la ligne, <p> donne deux retours à la ligne).
+				contenu = purgeHtml(tostring(bout:get_content('raw_utf')))
+			else
+				contenu = bout:get_content()
+			end
+			table.insert(colis.texte, contenu)
+		end
+	end
+	return colis.texte
+end
+
 local function chope(regle, tache)
 	local contenus
 
@@ -50,6 +123,10 @@ local function chope(regle, tache)
 		contenus = { tache.t:get_content() }
 	elseif regle.type == 'h' then
 		contenus = { calculerEnTetes(tache) }
+	elseif regle.type == 't' then -- Texte
+		contenus = textesBruts(tache)
+	elseif regle.type == 'T' then -- Texte avec <a> préservés.
+		contenus = textesPurges(tache)
 	-- À FAIRE: les autres cas.
 	else
 		rspamd_logger.errx(tache.t, 'unknown type [%s]', regle.type)
