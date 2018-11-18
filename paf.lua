@@ -43,17 +43,16 @@ end
 
 local function chope(regle, tache)
 	local contenus
-	local tacheTravail = { t = tache }
 
 	-- Extraction des contenus à analyser.
 	
 	if regle.type == 'r' then
-		contenus = { tache:get_content() }
+		contenus = { tache.t:get_content() }
 	elseif regle.type == 'h' then
-		contenus = { calculerEnTetes(tacheTravail) }
+		contenus = { calculerEnTetes(tache) }
 	-- À FAIRE: les autres cas.
 	else
-		rspamd_logger.errx(tache, 'unknown type [%s]', regle.type)
+		rspamd_logger.errx(tache.t, 'unknown type [%s]', regle.type)
 	end
 
 	-- Analyse.
@@ -82,8 +81,9 @@ function PafEnsemble.paf(this, tache)
 
 	local points = 0.0
 	local touche = false
+	local colis = { t = tache }
 	for _, regle in ipairs(this.regles) do
-		if chope(regle, tache) then
+		if chope(regle, colis) then
 			points = points + regle.points
 			touche = true
 		end
