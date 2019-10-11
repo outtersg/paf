@@ -1,0 +1,14 @@
+# Les règles ont la forme suivante:
+#	<type>	<valeur>	<expr>
+# Elles peuvent éventuellement être suivies d'un commentaire (espace, dièse, espace).
+# Les espaces en fin de ligne (ou avant le commentaire) sont ignorés (pour une expression se terminant par un espace, écrire: [ ]).
+#   <type>
+#     r  rêche (raw): chercher l'<expr> dans le message RFC822
+#     h  haut (headers): dans les en-têtes RFC822, chaque en-tête sur une ligne et désencodé (pour chercher un en-tête, précéder de \n, ex.: \nFrom: .*@domaine.fr).
+#     t  texte: dans les parties texte
+#     T  texte texte: dans les parties texte. Celles de type HTML sont d'abord simplifiées (suppression de toutes les balises fors les <a>), pour uniformiser en texte brut.
+#     *  une étoile qui suit un type indique que la valeur sera multipliée par le nombre d'occurrences.
+#   <valeur>
+#     nombre de dixièmes de points rspamd (donc pour un rspamd à seuil de pourriel à 15, une expression de valeur 150 place d'office le mél en pourriel).
+#   <expr>
+#     expression régulière à rechercher.
