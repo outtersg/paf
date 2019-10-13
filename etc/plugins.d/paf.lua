@@ -66,7 +66,46 @@ local function purgeHtml(c)
 	return c
 end
 
+local function _boutsTexte(t, contenus)
+	-- Selon que l'on arrive de la task ou d'un multipart, les sous-éléments ne se récupèrent pas de la même manière.
+	local bouts = (t.get_parts and t:get_parts()) or t:get_children()
+	if bouts then
+		local nAvant = 0
+		local v
+		for v in pairs(contenus) do nAvant = nAvant + 1 end
+		for _,bout in ipairs(bouts) do
+			if bout:is_multipart() then
+				local fistons = bout:get_children() or {}
+				for _,fiston in ipairs(fistons) do
+					_boutsTexte(fiston, contenus)
+				end
+			elseif bout:is_text() then
+				table.insert(contenus, bout)
+			else
+			end
+		end
+		local nApres = 0
+		for v in pairs(contenus) do nApres = nApres + 1 end
+		if nApres <= nAvant then
+		-- Des gugusses qui envoient du spam non-MIME, avec des Content-Type: text/plain; (point-virgule sans rien derrière) pour outrepasser le filtrage.
+		for _,bout in ipairs(bouts) do
+			local type = bout:get_header('Content-Type')
+			if not type or type:sub(1, 4) == 'text' then
+				table.insert(contenus, bout)
+				end
+			end
+		end
+	end
+end
+
 local function boutsTexte(colis)
+	local contenus = {}
+	_boutsTexte(colis.t, contenus)
+	return contenus
+end
+
+-- boutsTexte du temps où il n'existait pas le is_multipart.
+local function boutsTexte0(tache)
 	local contenus = {}
 	local trouve = false
 	local bouts = colis.t:get_text_parts()
