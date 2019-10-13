@@ -291,6 +291,7 @@ local function ensemble_charger(nom, params)
 		group = N,
 	})
 
+	rspamd_logger.errx(rspamd_config, 'paf: init with rules at %s', e.chemin, err)
 	e:charger()
 end
 
