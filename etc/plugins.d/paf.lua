@@ -274,8 +274,8 @@ local function ensemble_charger(nom, params)
 
 	-- Le symbole est inscrit.
 	
-	rspamd_config:register_symbol
-	({
+	rspamd_config:register_symbol(
+	{
 		type = 'normal',
 		name = nom,
 		callback = e:gen_appel(),
@@ -283,8 +283,8 @@ local function ensemble_charger(nom, params)
 
 	-- Ainsi que le fait qu'il compte.
 
-	rspamd_config:set_metric_symbol
-	({
+	rspamd_config:set_metric_symbol(
+	{
 		name = nom,
 		score = params['score'],
 		description = 'paf set',
