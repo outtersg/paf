@@ -273,13 +273,21 @@ function PafEnsemble.charger(this)
 		rspamd_logger.errx(rspamd_config, 'Unable to read paf rules file '%s': %s', this.chemin, err)
 		return
 	end
+	
+	local accepteurRegle = regexp.create('/^([a-zA-Z]+)([*]?)[ \t]+([-]?[0-9]+)[ \t]+(.*)$/')
+	
 	local num = 0
 	for l in f:lines() do
 		num = num + 1
 		l = l:gsub('^#.*', ''):gsub('[ \t]*[ \t]# .*', ''):gsub('^%s+', ''):gsub('%s+$', '')
 		if l:len() then
-			local marqueurs, mfois, points, exp = l:match('^([a-zA-Z]+)([*]?)[ \t]+([-]?%d+)[ \t]+(.*)$')
-			if marqueurs ~= nil and points ~= nil and exp ~= nil then
+			local res = accepteurRegle:search(l, true, true)
+			if res ~= nil then
+				res = res[1]
+				local marqueurs = res[2]
+				local mfois = res[3]
+				local points = res[4]
+				local exp = res[5]
 				local e = regexp.create(exp)
 				if not e then
 					rspamd_logger.errx(rspamd_config, 'Expression is not a regex: %s', exp)
@@ -291,6 +299,8 @@ function PafEnsemble.charger(this)
 			end
 		end
 	end
+
+	accepteurRegle:destroy()
 
 	if #regles <= 0 then
 		rspamd_logger.infox(rspamd_config, 'No rule in paf set \'%s\', skipping', this.nom)
