@@ -258,7 +258,7 @@ function PafEnsemble.paf(this, tache)
 	local touchees = {}
 	local colis = { t = tache, symboles = {} }
 	for _, regle in ipairs(this.regles) do
-		local nfois = chope(regle, colis)
+		local nfois = analyse(regle, colis)
 		if nfois and nfois ~= 0.0 then
 			points = points + nfois * regle.points
 			local exp = regle.e:get_pattern()
