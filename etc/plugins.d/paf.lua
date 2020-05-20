@@ -270,6 +270,11 @@ function PafEnsemble.paf(this, tache)
 			local chainenfois = nfois ~= 1 and nfois..'*' or ''
 			table.insert(touchees, chainenfois..'['..regle.ligne..'] '..exp)
 		end
+		if regle.symbole ~= "" then
+			if colis.symboles[regle.symbole] == nil or math.abs(nfois) > math.abs(colis.symboles[regle.symbole]) then
+				colis.symboles[regle.symbole] = nfois
+			end
+		end
 	end
 	diag(colis)
 	if #touchees > 0 then
