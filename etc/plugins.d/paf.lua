@@ -186,14 +186,6 @@ local function diag(colis)
 	fichier:close()
 end
 
-local function analyse(regle, colis)
-	if regle.type == '=' then
-		return calcule(regle, colis)
-	else
-		return chope(regle, colis)
-	end
-end
-
 local function calcule(regle, colis)
 	local e = load("return "..regle.e, nil, 't', colis.symboles)
 	local toutbon
@@ -238,6 +230,14 @@ local function chope(regle, tache)
 				end
 			end
 		end
+	end
+end
+
+local function analyse(regle, colis)
+	if regle.type == '=' then
+		return calcule(regle, colis)
+	else
+		return chope(regle, colis)
 	end
 end
 
