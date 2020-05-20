@@ -159,7 +159,7 @@ local function affDiag(fichier, libelle, contenu)
 	if libelle then
 		prefixe = libelle..'.'
 	end
-	if type(contenu) == 'string' then
+	if type(contenu) == 'string' or type(contenu) == 'number' then
 		fichier:write("\n=== "..libelle.." ===\n\n")
 		fichier:write(contenu)
 		fichier:write("\n")
