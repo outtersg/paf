@@ -325,7 +325,7 @@ function PafEnsemble.charger(this)
 					rspamd_logger.errx(rspamd_config, 'Expression is not a regex: %s', exp)
 				else
 					local fois = mfois == '*'
-					local r = { ligne = num, type = marqueurs, fois = fois, points = points, e = e }
+					local r = { ligne = num, type = marqueurs, fois = fois, points = points, symbole = symbole, e = e }
 					table.insert(regles, r)
 				end
 			end
