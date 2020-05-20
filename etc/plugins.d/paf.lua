@@ -294,7 +294,10 @@ function PafEnsemble.charger(this)
 		return
 	end
 	
-	local accepteurRegle = regexp.create('/^([a-zA-Z]+)([*]?)[ \t]+([-]?[0-9]+)[ \t]+(.*)$/')
+	-- À FAIRE: pointssymbole, ex. SYMBOLE*70 ou 70:SYMBOLE*, pour signifier de combien on incrémente le symbole. Permet par exemple juste après d'annuler tous les points accumulés (ex.: h BON From: bon ; t 70:MAUVAIS* spam ; = = BON * -MAUVAIS # Si BON, on ajoute -MAUVAIS points, annulant l'effet de la règle ayant calculé MAUVAIS).
+	-- À FAIRE: SYMBOLE! exporte un symbole global (au même titre que G_PAF)
+	
+	local accepteurRegle = regexp.create('/^([=a-zA-Z]+)([*]?)[ \t]+(?:([-]?[0-9]+)|([-]?[0-9]+):([a-zA-Z][a-zA-Z_0-9]*)|([a-zA-Z][a-zA-Z_0-9]*))[ \t]+(.*)$/')
 	
 	local num = 0
 	for l in f:lines() do
@@ -306,9 +309,18 @@ function PafEnsemble.charger(this)
 				res = res[1]
 				local marqueurs = res[2]
 				local mfois = res[3]
-				local points = res[4]
-				local exp = res[5]
-				local e = regexp.create(exp)
+				local points = res[4] ~= '' and res[4] or res[5]
+				local symbole = res[6] ~= '' and res[6] or res[7]
+				local exp = res[8]
+				local e
+				if marqueurs == '=' then
+					-- À FAIRE: précompiler
+					-- À FAIRE: remplacer tout ce qui ressemble à une regex (/…/{sélecteur}) par le regexp.create correspondant (PCRE, plus puissant que les regex Lua). Utiliser les sélecteurs https://rspamd.com/doc/lua/rspamd_regexp.html. Une fois l'objet regex créé, on pourra par exemple le référencer (remplacer la regex dans la chaîne à load()er) sous un nom d'après séquence, qui sera publié dans l'env passé au load.
+					-- À FAIRE: varier les balises à regex (ex.: @…@), pour permettre par exemple du http:// dedans sans avoir à déspécifier les /
+					e = exp
+				else
+					e = regexp.create(exp)
+				end
 				if not e then
 					rspamd_logger.errx(rspamd_config, 'Expression is not a regex: %s', exp)
 				else
