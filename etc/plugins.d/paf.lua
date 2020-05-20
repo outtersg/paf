@@ -260,7 +260,9 @@ function PafEnsemble.paf(this, tache)
 	for _, regle in ipairs(this.regles) do
 		local nfois = analyse(regle, colis)
 		if nfois and nfois ~= 0.0 then
+			if regle.points ~= "" then
 			points = points + nfois * regle.points
+			end
 			local exp = (type(regle.e) == 'string' and regle.e) or regle.e:get_pattern()
 			if exp:len() > 24 then
 				exp = exp:sub(1, 23)..'…'
