@@ -238,7 +238,7 @@ function PafEnsemble.paf(this, tache)
 
 	local points = 0.0
 	local touchees = {}
-	local colis = { t = tache }
+	local colis = { t = tache, symboles = {} }
 	for _, regle in ipairs(this.regles) do
 		local nfois = chope(regle, colis)
 		if nfois and nfois ~= 0.0 then
