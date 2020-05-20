@@ -186,6 +186,24 @@ local function diag(colis)
 	fichier:close()
 end
 
+local function analyse(regle, colis)
+	if regle.type == '=' then
+		return calcule(regle, colis)
+	else
+		return chope(regle, colis)
+	end
+end
+
+local function calcule(regle, colis)
+	local e = load("return "..regle.e, nil, 't', colis.symboles)
+	local toutbon
+	toutbon, e = pcall(e)
+	if toutbon then
+		return (type(e) == 'number' and e) or (e and 1) or 0
+	end
+	return 0
+end
+
 local function chope(regle, tache)
 	local contenus
 
