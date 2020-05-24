@@ -270,9 +270,13 @@ function PafEnsemble.paf(this, tache)
 			local chainenfois = nfois ~= 1 and nfois..'*' or ''
 			table.insert(touchees, chainenfois..'['..regle.ligne..'] '..exp)
 		end
-		if regle.symbole ~= "" then
-			if colis.symboles[regle.symbole] == nil or math.abs(nfois) > math.abs(colis.symboles[regle.symbole]) then
-				colis.symboles[regle.symbole] = nfois
+		if regle.symboles ~= nil then
+			local symbole, rs, ps
+			for symbole, rs in pairs(regle.symboles) do
+				ps = nfois and rs.points * nfois or 0
+				if colis.symboles[symbole] == nil or math.abs(ps) > math.abs(colis.symboles[symbole]) then
+					colis.symboles[symbole] = ps
+				end
 			end
 		end
 	end
@@ -330,7 +334,11 @@ function PafEnsemble.charger(this)
 					rspamd_logger.errx(rspamd_config, 'Expression is not a regex: %s', exp)
 				else
 					local fois = mfois == '*'
-					local r = { ligne = num, type = marqueurs, fois = fois, points = points, symbole = symbole, e = e }
+					local r = { ligne = num, type = marqueurs, fois = fois, points = points, e = e }
+					if symbole ~= '' then
+						r.symboles = {}
+						r.symboles[symbole] = { points = 1 }
+					end
 					table.insert(regles, r)
 				end
 			end
