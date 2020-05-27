@@ -270,7 +270,7 @@ function PafEnsemble.paf(this, tache)
 			local chainenfois = nfois ~= 1 and nfois..'*' or ''
 			table.insert(touchees, chainenfois..'['..regle.ligne..'] '..exp)
 		end
-		if regle.symboles ~= nil then
+		if regle.symboles then
 			local symbole, rs, ps
 			for symbole, rs in pairs(regle.symboles) do
 				ps = nfois and (rs.fois and rs.points * nfois or rs.points) or 0
