@@ -217,7 +217,7 @@ local function chope(regle, tache)
 	-- Analyse.
 
 	if contenus then
-		if regle.fois then
+		if regle.adesfois then
 			local fois = 0
 			local cettefois
 			for _, contenu in ipairs(contenus) do
@@ -264,7 +264,7 @@ function PafEnsemble.paf(this, tache)
 	for _, regle in ipairs(this.regles) do
 		local nfois = analyse(regle, colis)
 		if nfois and nfois ~= 0.0 then
-			if regle.points ~= "" then
+			if regle.points then
 			points = points + nfois * regle.points
 			end
 			local exp = (type(regle.e) == 'string' and regle.e) or regle.e:get_pattern()
@@ -310,7 +310,8 @@ function PafEnsemble.charger(this)
 	-- À FAIRE: pointssymbole, ex. SYMBOLE*70 ou 70:SYMBOLE*, pour signifier de combien on incrémente le symbole. Permet par exemple juste après d'annuler tous les points accumulés (ex.: h BON From: bon ; t 70:MAUVAIS* spam ; = = BON * -MAUVAIS # Si BON, on ajoute -MAUVAIS points, annulant l'effet de la règle ayant calculé MAUVAIS).
 	-- À FAIRE: SYMBOLE! exporte un symbole global (au même titre que G_PAF)
 	
-	local accepteurRegle = regexp.create('/^([=a-zA-Z]+)([*]?)[ \t]+(?:([-]?[0-9]+)|([-]?[0-9]+):([a-zA-Z][a-zA-Z_0-9]*)|([a-zA-Z][a-zA-Z_0-9]*))[ \t]+(.*)$/')
+	local accepteurRegle = regexp.create('/^([=a-zA-Z]+)([*]?)[ \t]+([-0-9_a-zA-Z=*,:;+]+)[ \t]+(.*)$/')
+	local accepteurRes = regexp.create('/(^|[,:;+])(([-]?[0-9]+)|([a-zA-Z][a-zA-Z_0-9]*)(=([-]?[0-9]+))?)([*]?)/')
 	
 	local num = 0
 	for l in f:lines() do
@@ -322,9 +323,8 @@ function PafEnsemble.charger(this)
 				res = res[1]
 				local marqueurs = res[2]
 				local mfois = res[3]
-				local points = res[4] ~= '' and res[4] or res[5]
-				local symbole = res[6] ~= '' and res[6] or res[7]
-				local exp = res[8]
+				local exp = res[5]
+				res = res[4]
 				local e
 				if marqueurs == '=' then
 					-- À FAIRE: précompiler
@@ -337,13 +337,38 @@ function PafEnsemble.charger(this)
 				if not e then
 					rspamd_logger.errx(rspamd_config, 'Expression is not a regex: %s', exp)
 				else
+					local boutsRes = accepteurRes:search(res, true, true)
+					if boutsRes then
+						local boutRes
+						-- search() nous renvoie tout fragment accepté, mais ne nous dit pas s'il ne reste pas des "trous" entre (des chaînes non prises en compte). Pour savoir si notre résultat n'est bien constitué que de fragments valides, on compare la taille.
+						local tailleRes = 0
+						for _,boutRes in pairs(boutsRes) do
+							tailleRes = tailleRes + boutRes[1]:len()
+						end
+						if tailleRes == res:len() then
 					local fois = mfois == '*'
-					local r = { ligne = num, type = marqueurs, fois = fois, points = points, e = e }
-					if symbole ~= '' then
-						r.symboles = {}
-						r.symboles[symbole] = { points = 1 }
+							local r = { ligne = num, type = marqueurs, adesfois = fois, e = e }
+							for _,boutRes in ipairs(boutsRes) do
+								if boutRes[4] ~= '' then -- Nombre de points.
+									r.points = 0 + boutRes[4]
+									r.fois = fois or boutRes[8] == '*'
+								else -- Symbole.
+									if not r.symboles then
+										r.symboles = {}
+									end
+									r.symboles[boutRes[5]] = { points = boutRes[7] == '' and 1 or 0 + boutRes[7], fois = fois or boutRes[8] == '*' }
+								end
+								if boutRes[8] == '*' then
+									r.adesfois = true
+								end
+							end
+							table.insert(regles, r)
+						else
+							rspamd_logger.errx(rspamd_config, 'Invalid rule result: %s', res)
+						end
+					else
+						rspamd_logger.errx(rspamd_config, 'Invalid rule result: %s', res)
 					end
-					table.insert(regles, r)
 				end
 			end
 		end
