@@ -273,7 +273,7 @@ function PafEnsemble.paf(this, tache)
 		if regle.symboles ~= nil then
 			local symbole, rs, ps
 			for symbole, rs in pairs(regle.symboles) do
-				ps = nfois and rs.points * nfois or 0
+				ps = nfois and (rs.fois and rs.points * nfois or rs.points) or 0
 				if colis.symboles[symbole] == nil or math.abs(ps) > math.abs(colis.symboles[symbole]) then
 					colis.symboles[symbole] = ps
 				end
