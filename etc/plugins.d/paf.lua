@@ -219,8 +219,12 @@ local function chope(regle, tache)
 	if contenus then
 		if regle.fois then
 			local fois = 0
+			local cettefois
 			for _, contenu in ipairs(contenus) do
-				fois = fois + regle.e:matchn(contenu, -1)
+				cettefois = regle.e:matchn(contenu, -1)
+				if cettefois > fois then
+					fois = cettefois
+				end
 			end
 			return fois
 		else
