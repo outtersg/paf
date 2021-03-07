@@ -263,7 +263,10 @@ function PafEnsemble.paf(this, tache)
 	local colis = { t = tache, symboles = {} }
 	for _, regle in ipairs(this.regles) do
 		local nfois = analyse(regle, colis)
-		if nfois and nfois ~= 0.0 then
+		if nfois and nfois == 0.0 then
+			nfois = nil
+		end
+		if nfois then
 			if regle.points then
 			points = points + nfois * regle.points
 			end
