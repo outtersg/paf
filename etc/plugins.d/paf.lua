@@ -9,6 +9,44 @@ local rspamd_logger = require 'rspamd_logger'
 local regexp = require 'rspamd_regexp'
 local util = require 'rspamd_util'
 
+--------------------------------------------------------------------------------
+-- Utilitaires.
+
+-- Argh, Lua 5.1 n'inclut ni bit32 ni opérateurs bit à bit!
+local function bit32_rshift(n, nbits)
+	return math.floor(n / 2 ^ nbits)
+end
+local function bit32_band(x, y) -- /!\ Ne fonctionne que pour un y ayant tous ses bits à droite.
+	return x % (y + 1)
+end
+
+-- Transforme une chaîne \uXXXX en le caractère UTF-8 correspondant.
+local function uechapp(u)
+	local n, pre, paq, c
+	local ch
+	u = u:sub(3)
+	n = tonumber('0x'..u)
+	-- http://lua-users.org/wiki/LuaUnicode "UTF8 decoding function"
+	pre = -- Nombre de bits de préfixe.
+		n >= 0x4000000 and 6 or
+		n >= 0x200000 and 5 or
+		n >= 0x10000 and 4 or
+		n >= 0x800 and 3 or
+		n >= 0x80 and 2 or
+		0
+	paq = pre > 0 and pre - 1 or 0 -- Nombre de paquets de 6 bits hors l'octet portant le préfixe.
+	c = (0x100 - 2 ^ (8 - pre)) + bit32_rshift(n, 6 * paq)
+	ch = string.char(c)
+	while paq > 0 do
+		paq = paq - 1
+		ch = ch..string.char(0x80 + bit32_band(bit32_rshift(n, 6 * paq), 0x3F))
+	end
+	return ch
+end
+
+--------------------------------------------------------------------------------
+-- Objets.
+
 local PafEnsemble = {}
 local PafEnsemble__mt = { __index = PafEnsemble }
 
@@ -335,6 +373,7 @@ function PafEnsemble.charger(this)
 					-- À FAIRE: varier les balises à regex (ex.: @…@), pour permettre par exemple du http:// dedans sans avoir à déspécifier les /
 					e = exp
 				else
+					exp = exp:gsub('\\u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]', uechapp)
 					e = regexp.create(exp)
 				end
 				if not e then
