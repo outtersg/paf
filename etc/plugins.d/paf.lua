@@ -373,7 +373,6 @@ function PafEnsemble.charger(this)
 					-- À FAIRE: varier les balises à regex (ex.: @…@), pour permettre par exemple du http:// dedans sans avoir à déspécifier les /
 					e = exp
 				else
-					exp = exp:gsub('\\u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]', uechapp)
 					e = regexp.create(exp)
 				end
 				if not e then
